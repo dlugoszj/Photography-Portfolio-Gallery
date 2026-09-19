@@ -103,10 +103,6 @@ discovering by surprise:
 - `.github/workflows/deploy.yml` is a fully commented-out legacy GitHub Pages
   pipeline, superseded by the two Firebase Hosting workflows above.
 - `frontend/src/pages/Admin/Admin.tsx` is not wired into any route — dead code.
-- `frontend/src/pages/Home/ImageGallery.tsx`'s `handleDelete` ignores the
-  collection path it's passed and calls `doc(db, docId)` with just the bare
-  document ID, which Firestore rejects — deleting an image from the admin UI
-  currently throws at runtime.
 - **`npm run lint` doesn't work.** The only `.eslintrc.cjs` lives at the repo
   root, but ESLint resolves plugins relative to wherever the config file is —
   and there's no `node_modules` at the repo root (only in `frontend/`). ESLint

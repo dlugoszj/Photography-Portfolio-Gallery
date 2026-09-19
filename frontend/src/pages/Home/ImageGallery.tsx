@@ -43,7 +43,7 @@ const handleAddImage = async (files: FileList | null, collectionPath: string) =>
   }
 };
 
-const handleDelete = async (collection: string, docId: string) => {
+const handleDelete = async (_collection: string, docId: string) => {
   const docRef = doc(db, docId);
   const docObject = await getDoc(docRef);
 
