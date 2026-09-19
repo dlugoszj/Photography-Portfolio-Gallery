@@ -20,17 +20,19 @@ Firestore document with a cover image in Storage; images additionally have a
 thumbnail (700×700) and full-size (2000×2000) rendition, generated server-side.
 
 ```
-frontend/
-  src/
-    pages/
-      Home/           Public gallery views (category list, album list, image grid)
-      Admin/           Login screen (Admin.tsx itself is currently unused/dead)
-    components/        Shared UI: nav bar, modals for add/edit/delete, protected route
-    utils/utils.ts      Firestore/Storage read-write helpers, client-side image resize (pica)
-    firebaseConfig.ts   Firebase client SDK init
-  functions/
-    src/index.ts        Cloud Functions: processImage (resize/convert/compress),
-                         deleteDocumentsRecursively (cascading delete for admin)
+src/
+  pages/
+    Home/             Public gallery views (category list, album list, image grid)
+    Admin/            Login screen (Admin.tsx itself is currently unused/dead)
+  components/         Shared UI: nav bar, modals for add/edit/delete, protected route
+  utils/utils.ts      Firestore/Storage read-write helpers, client-side image resize (pica)
+  firebaseConfig.ts   Firebase client SDK init
+functions/
+  src/index.ts        Cloud Functions: processImage (resize/convert/compress),
+                      deleteDocumentsRecursively (cascading delete for admin)
+firebase.json         Hosting, Functions, Firestore and Storage config
+firestore.rules       Firestore security rules
+storage.rules         Storage security rules
 ```
 
 **Routing** (`src/App.tsx`), via `react-router-dom` with `HashRouter`:
@@ -54,13 +56,12 @@ Firestore.
 Requires Node 20 (matches the Cloud Functions runtime).
 
 ```bash
-cd frontend
 npm install
 cp .env.example .env   # fill in Firebase web app config (see below)
 npm run dev
 ```
 
-Environment variables (`frontend/.env`):
+Environment variables (`.env`):
 
 ```
 VITE_FIREBASE_API_KEY=...
@@ -69,43 +70,60 @@ VITE_FIREBASE_API_KEY=...
 Other Firebase config (project ID, auth domain, etc.) is hardcoded in
 `src/firebaseConfig.ts` since it's not sensitive — only the API key is templated.
 
-Cloud Functions live in `frontend/functions` and have their own `package.json`:
+Cloud Functions live in `functions/` and have their own `package.json`:
 
 ```bash
-cd frontend/functions
+cd functions
 npm install
 npm run build
 ```
 
-### Scripts (`frontend/`)
+### Scripts
 
 - `npm run dev` — start the Vite dev server
 - `npm run build` — type-check (`tsc`) then build with Vite
 - `npm run lint` — ESLint
 - `npm run preview` — preview a production build locally
 
+## Deployment
+
+**CI:** pushing to `main` runs `.github/workflows/firebase-hosting-merge.yml`,
+which builds the site and deploys `dist/` to the live Firebase Hosting channel.
+Pull requests get a preview channel via `firebase-hosting-pull-request.yml`.
+Both need two repository secrets:
+
+- `VITE_FIREBASE_API_KEY` — the same value as in `.env`
+- `FIREBASE_SERVICE_ACCOUNT_TATA_S_PHOTOGRAPHY` — a Firebase service account key
+
+CI deploys Hosting only; Cloud Functions are deployed manually.
+
+**Manually**, from the repo root with the Firebase CLI:
+
+```bash
+npm run build && firebase deploy --only hosting
+firebase deploy --only functions
+```
+
+Plain `firebase deploy` (without `--only`) also pushes `firestore.rules` and
+`storage.rules`, which overwrites whatever rules are live in the Firebase console
+(see Known issues).
+
 ## Known issues
 
 This project has some rough edges worth calling out up front rather than
 discovering by surprise:
 
-- **Firestore security rules are expired.** `frontend/firestore.rules` still has
-  the Firebase default "test mode" rule, which only allowed access until
+- **Firestore security rules are expired.** `firestore.rules` still has the
+  Firebase default "test mode" rule, which only allowed access until
   2026-02-27. As written, all Firestore reads/writes are currently denied.
 - **Storage security rules deny everything unconditionally** (`allow read, write:
-  if false` in `frontend/storage.rules`), which also breaks image loading via
+  if false` in `storage.rules`), which also breaks image loading via
   `getDownloadURL`. Neither of these has real auth-based rules in place yet —
   that needs to happen before this could serve real traffic.
-- **The Firebase Hosting deploy workflow is broken.**
-  `.github/workflows/firebase-hosting-merge.yml` runs `npm ci && npm run build`
-  from the repo root, but `package.json` lives in `frontend/`. It's been failing
-  on every push to `main` since it's had no `working-directory` set.
-- `.github/workflows/deploy.yml` is a fully commented-out legacy GitHub Pages
-  pipeline, superseded by the two Firebase Hosting workflows above.
-- `frontend/src/pages/Admin/Admin.tsx` is not wired into any route — dead code.
-- **`npm run lint` doesn't work.** The only `.eslintrc.cjs` lives at the repo
-  root, but ESLint resolves plugins relative to wherever the config file is —
-  and there's no `node_modules` at the repo root (only in `frontend/`). ESLint
-  fails to find `@typescript-eslint/eslint-plugin` even though it's installed.
+- `src/pages/Admin/Admin.tsx` is not wired into any route — dead code.
+- **`npm run lint` reports 14 errors.** The most significant: `ImageGallery.tsx`
+  returns early before calling its hooks, which violates React's rules of hooks
+  (harmless in practice, since that route always has a `galleryId`). The rest
+  are `prefer-const` and unused-variable findings.
 
-See `frontend/TODO.txt` for planned feature work.
+See `TODO.txt` for planned feature work.
