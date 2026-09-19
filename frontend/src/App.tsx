@@ -7,11 +7,6 @@ import "./App.css";
 import GenericGallery from "./pages/Home/GenericGallery";
 
 function App() {
-  // const { imageCategories, images } = getCategoryImages();
-  // console.log("cats");
-  // console.log(imageCategories);
-  // console.log("imgs");
-  // console.log(images);
   return (
     <>
       <div className="gradient_background">
@@ -32,12 +27,7 @@ function App() {
             path="/admin/:categoryId"
             element={
               <ProtectedRoute>
-                <GenericGallery
-                  galleryType="album"
-                  // collectionName="albumCategories"
-                  // galleryTitle="GALLERY"
-                  adminMode={true}
-                />
+                <GenericGallery galleryType="album" adminMode={true} />
               </ProtectedRoute>
             }
           />
@@ -50,7 +40,6 @@ function App() {
             }
           />
         </Routes>
-        <script src="../dist/bundle.js"></script>
       </div>
     </>
   );
