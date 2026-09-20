@@ -95,31 +95,34 @@ Both need two repository secrets:
 - `VITE_FIREBASE_API_KEY` — the same value as in `.env`
 - `FIREBASE_SERVICE_ACCOUNT_TATA_S_PHOTOGRAPHY` — a Firebase service account key
 
-CI deploys Hosting only; Cloud Functions are deployed manually.
-
-**Manually**, from the repo root with the Firebase CLI:
+CI deploys Hosting only. Cloud Functions and security rules are deployed
+manually, from the repo root with the Firebase CLI:
 
 ```bash
 npm run build && firebase deploy --only hosting
 firebase deploy --only functions
+firebase deploy --only firestore:rules,storage
 ```
 
-Plain `firebase deploy` (without `--only`) also pushes `firestore.rules` and
-`storage.rules`, which overwrites whatever rules are live in the Firebase console
-(see Known issues).
+Note that nothing syncs rules automatically: editing them in the Firebase
+console leaves the files here stale, and deploying overwrites whatever is live.
+
+## Security rules
+
+`firestore.rules` and `storage.rules` both grant public read access to gallery
+content and restrict writes to an allowlist of admin user IDs (`isAdmin()`).
+Anything outside `albumCategories` is denied to clients by default. Cloud
+Functions use the Admin SDK and bypass rules entirely, which is how album
+creation and cascading deletes work.
+
+Adding an admin means adding their UID (Firebase console → Authentication →
+Users) to the list in both files, then redeploying the rules.
 
 ## Known issues
 
 This project has some rough edges worth calling out up front rather than
 discovering by surprise:
 
-- **Firestore security rules are expired.** `firestore.rules` still has the
-  Firebase default "test mode" rule, which only allowed access until
-  2026-02-27. As written, all Firestore reads/writes are currently denied.
-- **Storage security rules deny everything unconditionally** (`allow read, write:
-  if false` in `storage.rules`), which also breaks image loading via
-  `getDownloadURL`. Neither of these has real auth-based rules in place yet —
-  that needs to happen before this could serve real traffic.
 - `src/pages/Admin/Admin.tsx` is not wired into any route — dead code.
 - **`npm run lint` reports 14 errors.** The most significant: `ImageGallery.tsx`
   returns early before calling its hooks, which violates React's rules of hooks

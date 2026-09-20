@@ -1,12 +1,22 @@
 rules_version = '2';
 
-// Craft rules based on data in your Firestore database
-// allow write: if firestore.get(
-//    /databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin;
 service firebase.storage {
   match /b/{bucket}/o {
-    match /{allPaths=**} {
-      allow read, write: if false;
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.uid in [
+          "khcnryddF0XTZSVERg1D2w7ajCn1",
+          "RIeTh11rFbWv7Ns1fVJeh8s2xHy1"
+        ];
+    }
+
+    // Album category, album, and image files. Readable by anyone,
+    // writable only by an admin. Cloud Functions use the Admin SDK and
+    // bypass these rules.
+    match /albumCategories/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
   }
 }
