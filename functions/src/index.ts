@@ -41,7 +41,7 @@ export const processImage =  functions.https.onCall(async (request: functions.ht
     // If an image in an album is uploaded
     if (filePath.includes("/images/") ){
         await resizeHelper(filePath, 700, "_700x700");
-        let [image2000Height, image2000Width] = await resizeHelper(filePath, 2000, "_2000x2000");
+        const [image2000Height, image2000Width] = await resizeHelper(filePath, 2000, "_2000x2000");
 
         const documentRef = admin.firestore().doc(filePath);
         documentRef.set({

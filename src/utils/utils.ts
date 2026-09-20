@@ -90,7 +90,7 @@ export const handleDelete = async (collection: string, docId: string) => {
   await handleDeleteStorage(collection + "/" + docRef.id);
 
   const deleteDocumentsRecursively = httpsCallable(functions, "deleteDocumentsRecursively");
-  let path = collection + "/" + docRef.id;
+  const path = collection + "/" + docRef.id;
   try{
     await deleteDocumentsRecursively({path:path})
     console.log("Succesfully deleted " + path)
@@ -161,7 +161,7 @@ export const resizeImage = async(file :Blob) => {
       return file;
     }
 
-    let scale = Math.min(maxWidth / originalWidth, maxHeight / originalHeight);
+    const scale = Math.min(maxWidth / originalWidth, maxHeight / originalHeight);
     newWidth = originalWidth * scale;
     newHeight = originalHeight * scale;
 

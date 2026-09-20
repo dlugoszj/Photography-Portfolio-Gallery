@@ -79,7 +79,16 @@ const ImageGallery: React.FC<ImageGalleryInfo> = ({ adminMode = false }) => {
   if (!galleryId) {
     return <div className="text-white">Invalid gallery ID</div>;
   }
+  return <ImageGalleryContent categoryId={categoryId} galleryId={galleryId} adminMode={adminMode} />;
+};
 
+type ImageGalleryContentProps = {
+  categoryId?: string;
+  galleryId: string;
+  adminMode: boolean;
+};
+
+const ImageGalleryContent: React.FC<ImageGalleryContentProps> = ({ categoryId, galleryId, adminMode }) => {
   const [Photos, setPhotos] = useState<Photo[]>([]);
   const [galleryTitle, setGalleryTitle] = useState<string>("");
 
@@ -90,7 +99,7 @@ const ImageGallery: React.FC<ImageGalleryInfo> = ({ adminMode = false }) => {
       setGalleryTitle(name);
     };
     fetchTitle();
-  }, [categoryId]);
+  }, [categoryId, galleryId]);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(

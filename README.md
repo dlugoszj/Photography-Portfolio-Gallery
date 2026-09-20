@@ -118,15 +118,6 @@ creation and cascading deletes work.
 Adding an admin means adding their UID (Firebase console → Authentication →
 Users) to the list in both files, then redeploying the rules.
 
-## Known issues
+## Planned work
 
-This project has some rough edges worth calling out up front rather than
-discovering by surprise:
-
-- `src/pages/Admin/Admin.tsx` is not wired into any route — dead code.
-- **`npm run lint` reports 14 errors.** The most significant: `ImageGallery.tsx`
-  returns early before calling its hooks, which violates React's rules of hooks
-  (harmless in practice, since that route always has a `galleryId`). The rest
-  are `prefer-const` and unused-variable findings.
-
-See `TODO.txt` for planned feature work.
+See `TODO.txt`.
