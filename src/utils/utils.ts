@@ -107,7 +107,7 @@ export const getDocumentName = async (firebaseDocumentPath: string) => {
     if (docObject.exists()){
         return docObject.data().title;
     }
-    return "asd";
+    return "";
 }
 
 
@@ -115,7 +115,7 @@ export const getDocumentName = async (firebaseDocumentPath: string) => {
 export const uploadImage = async (file: File, storageRef: StorageReference, docRef: DocumentReference, filePath: string, albumTitle: string = "", albumDescription: string ="") => {
     let processedFile: Blob = file;
 
-    if(file.type != "image/heic" && file.type != "image/heic"){
+    if(file.type != "image/heic" && file.type != "image/heif"){
       const resizedBlob = await resizeImage(processedFile);
       processedFile = resizedBlob;
     }

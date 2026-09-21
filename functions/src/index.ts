@@ -47,11 +47,8 @@ export const deleteDocumentsRecursively = functions.https
     // Get reference to document from path that was passed in.
     const ref = admin.firestore().doc(request.data.path); 
 
-    // Recursive delete
+    // Deletes the document and all of its subcollections
     await admin.firestore().recursiveDelete(ref);
-
-    // Delete original parent document
-    await ref.delete();
 });
 
 // Function that compresses/resizes an image when it is uploaded to Firestore
@@ -69,7 +66,7 @@ export const processImage =  functions.https.onCall(async (request: functions.ht
         const [image2000Height, image2000Width] = await resizeHelper(filePath, 2000, "_2000x2000");
 
         const documentRef = admin.firestore().doc(filePath);
-        documentRef.set({
+        await documentRef.set({
             imageURL: filePath,
             fullSizedImageURL:filePath + "_2000x2000" , 
             thumbnailURL:filePath + "_700x700", 
@@ -99,10 +96,10 @@ export const processImage =  functions.https.onCall(async (request: functions.ht
         // handleUpdate in utils which just is uploading an image nothing more. If this
         // is called by handleSaveAlbum then it has to have album title and description.
         if (request.data.albumDescription == "" || request.data.albumTitle == ""){
-            documentRef.update({updatedAt: Date.now()})
+            await documentRef.update({updatedAt: Date.now()});
         }
         else{
-            documentRef.set({
+            await documentRef.set({
                 coverImageUrl: filePath + "_resized",
                 description: request.data.albumDescription,
                 title: request.data.albumTitle,
