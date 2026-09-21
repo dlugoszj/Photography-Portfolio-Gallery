@@ -9,16 +9,40 @@ import { fileTypeFromBuffer } from "file-type";
 
 
 admin.initializeApp();
+
+// Must match isAdmin() in firestore.rules and storage.rules. Functions use the
+// Admin SDK, which bypasses those rules, so they have to check this themselves.
+const ADMIN_UIDS = ["khcnryddF0XTZSVERg1D2w7ajCn1", "RIeTh11rFbWv7Ns1fVJeh8s2xHy1"];
+
+// The only paths the client sends. Anything else is rejected before any work is done.
+// Album/category document: albumCategories/{c} or albumCategories/{c}/albums/{a}
+const DELETE_PATH = /^albumCategories\/[^/]+(\/albums\/[^/]+)?$/;
+// Image uploaded into an album
+const IMAGE_PATH = /^albumCategories\/[^/]+\/albums\/[^/]+\/images\/[^/]+$/;
+// New (cover) or replaced (cover_resized) album/category cover image
+const COVER_PATH = /^albumCategories\/[^/]+(\/albums\/[^/]+)?\/cover(_resized)?$/;
+
+// Throws unless the caller is logged in as an admin
+function assertAdmin(request: functions.https.CallableRequest) {
+    if (!request || !request.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Must be logged in");
+    }
+    if (!ADMIN_UIDS.includes(request.auth.uid)) {
+        throw new functions.https.HttpsError("permission-denied", "Must be an admin");
+    }
+}
+
 // Function that is given a document from Firebase deletes it and recursively
 // deletes any sub-documents of the parent document.
 export const deleteDocumentsRecursively = functions.https
-    .onCall(async (request: functions.https.CallableRequest) => { 
-    
-    // Check that the user is authenticated 
-    if (!request || !request.auth) { 
-        throw new functions.https.HttpsError("unauthenticated", "Must be logged in"); 
-    } 
-    console.log("Deleting " + request.data.path); 
+    .onCall(async (request: functions.https.CallableRequest) => {
+
+    // Check that the user is an admin and the path is an album/category
+    assertAdmin(request);
+    if (typeof request.data.path !== "string" || !DELETE_PATH.test(request.data.path)) {
+        throw new functions.https.HttpsError("invalid-argument", "Invalid path");
+    }
+    console.log("Deleting " + request.data.path);
 
     // Get reference to document from path that was passed in.
     const ref = admin.firestore().doc(request.data.path); 
@@ -32,11 +56,12 @@ export const deleteDocumentsRecursively = functions.https
 
 // Function that compresses/resizes an image when it is uploaded to Firestore
 export const processImage =  functions.https.onCall(async (request: functions.https.CallableRequest) => { 
-    // Check that the user is authenticated 
-    if (!request || !request.auth) { 
-        throw new functions.https.HttpsError("unauthenticated", "Must be logged in"); 
-    } 
+    // Check that the user is an admin and the path is an image or cover image
+    assertAdmin(request);
     const filePath = request.data.filePath;
+    if (typeof filePath !== "string" || !(IMAGE_PATH.test(filePath) || COVER_PATH.test(filePath))) {
+        throw new functions.https.HttpsError("invalid-argument", "Invalid file path");
+    }
  
     // If an image in an album is uploaded
     if (filePath.includes("/images/") ){
